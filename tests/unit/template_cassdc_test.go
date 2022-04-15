@@ -51,9 +51,10 @@ type JvmOptions struct {
 }
 
 type Config struct {
-	CassandraConfig  CassandraConfig `json:"cassandra-yaml"`
-	JvmOptions       *JvmOptions     `json:"jvm-options"`
-	JvmServerOptions *JvmOptions     `json:"jvm-server-options"`
+	CassandraConfig    CassandraConfig `json:"cassandra-yaml"`
+	JvmOptions         *JvmOptions     `json:"jvm-options"`
+	JvmServerOptions   *JvmOptions     `json:"jvm-server-options"`
+	Jvm11ServerOptions *JvmOptions     `json:"jvm11-server-options"`
 }
 
 var (
@@ -139,10 +140,9 @@ var _ = Describe("Verify CassandraDatacenter template", func() {
 			// JVM heap options -- default to settings as defined in cassdc.yaml
 			var config Config
 			Expect(json.Unmarshal(cassdc.Spec.Config, &config)).To(Succeed())
-			Expect(config.JvmServerOptions).ToNot(BeNil())
-			Expect(config.JvmServerOptions.InitialHeapSize).To(BeEmpty())
-			Expect(config.JvmServerOptions.MaxHeapSize).To(BeEmpty())
-			Expect(config.JvmServerOptions.YoungGenSize).To(BeEmpty())
+			Expect(config.Jvm11ServerOptions.InitialHeapSize).To(BeEmpty())
+			Expect(config.Jvm11ServerOptions.MaxHeapSize).To(BeEmpty())
+			Expect(config.Jvm11ServerOptions.YoungGenSize).To(BeEmpty())
 
 			// Default set of volume and volume mounts
 			Expect(kubeapi.GetVolumeMountNames(&initContainers[0])).To(ConsistOf(CassandraConfigVolumeName,
@@ -652,7 +652,7 @@ var _ = Describe("Verify CassandraDatacenter template", func() {
 			options := &helm.Options{
 				KubectlOptions: defaultKubeCtlOptions,
 				SetValues: map[string]string{
-					"cassandra.version": "3.11.11",
+					"cassandra.version": "3.11.12",
 					"cassandra.datacenters[0].allocateTokensForLocalRF": "3",
 				},
 			}
@@ -666,7 +666,7 @@ var _ = Describe("Verify CassandraDatacenter template", func() {
 			options := &helm.Options{
 				KubectlOptions: defaultKubeCtlOptions,
 				SetValues: map[string]string{
-					"cassandra.version": "4.0.1",
+					"cassandra.version": "4.0.3",
 				},
 			}
 
@@ -681,7 +681,7 @@ var _ = Describe("Verify CassandraDatacenter template", func() {
 			options := &helm.Options{
 				KubectlOptions: defaultKubeCtlOptions,
 				SetValues: map[string]string{
-					"cassandra.version":                                 "4.0.1",
+					"cassandra.version":                                 "4.0.3",
 					"cassandra.datacenters[0].name":                     "test",
 					"cassandra.datacenters[0].allocateTokensForLocalRF": "5",
 				},
@@ -726,7 +726,7 @@ var _ = Describe("Verify CassandraDatacenter template", func() {
 			dcName := "dc1"
 			options := &helm.Options{
 				SetValues: map[string]string{
-					"cassandra.version":             "3.11.11",
+					"cassandra.version":             "3.11.12",
 					"cassandra.heap.size":           "700M",
 					"cassandra.heap.newGenSize":     "350M",
 					"cassandra.datacenters[0].name": dcName,
@@ -752,7 +752,7 @@ var _ = Describe("Verify CassandraDatacenter template", func() {
 			dcName := "dc1"
 			options := &helm.Options{
 				SetValues: map[string]string{
-					"cassandra.version":                        "3.11.11",
+					"cassandra.version":                        "3.11.12",
 					"cassandra.heap.size":                      "700M",
 					"cassandra.heap.newGenSize":                "350M",
 					"cassandra.datacenters[0].heap.size":       "300M",
@@ -778,7 +778,7 @@ var _ = Describe("Verify CassandraDatacenter template", func() {
 			dcName := "dc1"
 			options := &helm.Options{
 				SetValues: map[string]string{
-					"cassandra.version":                  "3.11.11",
+					"cassandra.version":                  "3.11.12",
 					"cassandra.datacenters[0].heap.size": "300M",
 					"cassandra.datacenters[0].name":      dcName,
 					// Note: not setting - "cassandra.datacenters[0].heap.newGenSize": "150M",
@@ -802,7 +802,7 @@ var _ = Describe("Verify CassandraDatacenter template", func() {
 			dcName := "dc1"
 			options := &helm.Options{
 				SetValues: map[string]string{
-					"cassandra.version": "3.11.11",
+					"cassandra.version": "3.11.12",
 					// Note: not setting "cassandra.datacenters[0].heap.size":       "300M",
 					"cassandra.datacenters[0].name":            dcName,
 					"cassandra.datacenters[0].heap.newGenSize": "150M",
@@ -826,7 +826,7 @@ var _ = Describe("Verify CassandraDatacenter template", func() {
 			dcName := "dc1"
 			options := &helm.Options{
 				SetValues: map[string]string{
-					"cassandra.version":             "3.11.11",
+					"cassandra.version":             "3.11.12",
 					"cassandra.heap.size":           "300M",
 					"cassandra.datacenters[0].name": dcName,
 					// Note: not setting - "cassandra.heap.newGenSize": "150M",
@@ -851,7 +851,7 @@ var _ = Describe("Verify CassandraDatacenter template", func() {
 			dcName := "dc1"
 			options := &helm.Options{
 				SetValues: map[string]string{
-					"cassandra.version": "3.11.11",
+					"cassandra.version": "3.11.12",
 					// Note: not setting - "cassandra.heap.size": "300M",
 					"cassandra.heap.newGenSize":     "150M",
 					"cassandra.datacenters[0].name": dcName,
@@ -1088,7 +1088,9 @@ var _ = Describe("Verify CassandraDatacenter template", func() {
 			Expect(config.CassandraConfig.PermissionsUpdateMillis).To(Equal(cacheUpdateInterval))
 			Expect(config.CassandraConfig.CredentialsValidityMillis).To(Equal(cacheValidityPeriod))
 			Expect(config.CassandraConfig.CredentialsUpdateMillis).To(Equal(cacheUpdateInterval))
-			Expect(config.JvmServerOptions.AdditionalJvmOptions).To(ContainElements(
+			Expect(config.Jvm11ServerOptions).NotTo(BeNil(), "Jvm11ServerOptions should not be nil")
+			Expect(config.Jvm11ServerOptions.AdditionalJvmOptions).NotTo(BeNil(), "Jvm11ServerOptions.AdditionalJvmOptions should not be nil")
+			Expect(config.Jvm11ServerOptions.AdditionalJvmOptions).To(ContainElements(
 				"-Dcassandra.system_distributed_replication_dc_names="+dcName,
 				"-Dcassandra.system_distributed_replication_per_dc="+strconv.Itoa(clusterSize),
 			))
@@ -1371,7 +1373,7 @@ var _ = Describe("Verify CassandraDatacenter template", func() {
 			dcName := "dc1"
 			options := &helm.Options{
 				SetValues: map[string]string{
-					"cassandra.version":             "4.0.1",
+					"cassandra.version":             "4.0.3",
 					"cassandra.heap.size":           "700M",
 					"cassandra.heap.newGenSize":     "350M",
 					"cassandra.datacenters[0].name": dcName,
@@ -1443,13 +1445,15 @@ var _ = Describe("Verify CassandraDatacenter template", func() {
 
 	Context("when configuring the Cassandra version and/or image", func() {
 		cassandraVersionImageMap := map[string]string{
-			"3.11.7":  "k8ssandra/cass-management-api:3.11.7-v0.1.33",
-			"3.11.8":  "k8ssandra/cass-management-api:3.11.8-v0.1.33",
+			"3.11.7":  "k8ssandra/cass-management-api:3.11.7-v0.1.37",
+			"3.11.8":  "k8ssandra/cass-management-api:3.11.8-v0.1.37",
 			"3.11.9":  "k8ssandra/cass-management-api:3.11.9-v0.1.27",
 			"3.11.10": "k8ssandra/cass-management-api:3.11.10-v0.1.27",
-			"3.11.11": "k8ssandra/cass-management-api:3.11.11-v0.1.33",
-			"4.0.0":   "k8ssandra/cass-management-api:4.0.0-v0.1.33",
-			"4.0.1":   "k8ssandra/cass-management-api:4.0.1-v0.1.33",
+			"3.11.11": "k8ssandra/cass-management-api:3.11.11-v0.1.37",
+			"3.11.12": "k8ssandra/cass-management-api:3.11.12-v0.1.37",
+			"4.0.0":   "k8ssandra/cass-management-api:4.0.0-v0.1.37",
+			"4.0.1":   "k8ssandra/cass-management-api:4.0.1-v0.1.37",
+			"4.0.3":   "k8ssandra/cass-management-api:4.0.3-v0.1.37",
 		}
 
 		It("using the default version", func() {
@@ -1459,8 +1463,8 @@ var _ = Describe("Verify CassandraDatacenter template", func() {
 
 			Expect(renderTemplate(options)).To(Succeed())
 
-			Expect(cassdc.Spec.ServerVersion).To(Equal("4.0.1"))
-			Expect(cassdc.Spec.ServerImage).To(Equal("k8ssandra/cass-management-api:4.0.1-v0.1.33"))
+			Expect(cassdc.Spec.ServerVersion).To(Equal("4.0.3"))
+			Expect(cassdc.Spec.ServerImage).To(Equal("k8ssandra/cass-management-api:4.0.3-v0.1.37"))
 		})
 
 		It("using 3.11.7", func() {
@@ -1538,6 +1542,21 @@ var _ = Describe("Verify CassandraDatacenter template", func() {
 			Expect(cassdc.Spec.ServerImage).To(Equal(cassandraVersionImageMap[version]))
 		})
 
+		It("using 3.11.12", func() {
+			version := "3.11.12"
+			options := &helm.Options{
+				KubectlOptions: defaultKubeCtlOptions,
+				SetValues: map[string]string{
+					"cassandra.version": version,
+				},
+			}
+
+			Expect(renderTemplate(options)).To(Succeed())
+
+			Expect(cassdc.Spec.ServerVersion).To(Equal(version))
+			Expect(cassdc.Spec.ServerImage).To(Equal(cassandraVersionImageMap[version]))
+		})
+
 		It("using 4.0.0", func() {
 			version := "4.0.0"
 			options := &helm.Options{
@@ -1568,6 +1587,21 @@ var _ = Describe("Verify CassandraDatacenter template", func() {
 			Expect(cassdc.Spec.ServerImage).To(Equal(cassandraVersionImageMap[version]))
 		})
 
+		It("using 4.0.3", func() {
+			version := "4.0.3"
+			options := &helm.Options{
+				KubectlOptions: defaultKubeCtlOptions,
+				SetValues: map[string]string{
+					"cassandra.version": version,
+				},
+			}
+
+			Expect(renderTemplate(options)).To(Succeed())
+
+			Expect(cassdc.Spec.ServerVersion).To(Equal(version))
+			Expect(cassdc.Spec.ServerImage).To(Equal(cassandraVersionImageMap[version]))
+		})
+
 		It("using an unsupported version", func() {
 			ver := "3.12.225"
 			options := &helm.Options{
@@ -1581,8 +1615,8 @@ var _ = Describe("Verify CassandraDatacenter template", func() {
 			Expect(renderedErr).To(HaveOccurred())
 		})
 
-		It("using 3.11.11 and a custom image", func() {
-			version := "3.11.11"
+		It("using 3.11.12 and a custom image", func() {
+			version := "3.11.12"
 			repository := "my_cassandra"
 			options := &helm.Options{
 				KubectlOptions: defaultKubeCtlOptions,
@@ -1649,9 +1683,73 @@ var _ = Describe("Verify CassandraDatacenter template", func() {
 			Expect(json.Unmarshal(cassdc.Spec.Config, &config)).To(Succeed())
 			Expect(config.CassandraConfig.NumTokens).To(Equal(int64(expectedTokens)))
 		},
-		Entry("3.11.11 default", "3.11.11", "", 256),
-		Entry("3.11.11 custom", "3.11.11", "16", 16),
+		Entry("3.11.12 default", "3.11.12", "", 256),
+		Entry("3.11.12 custom", "3.11.12", "16", 16),
 	)
+
+	It("using ZGC with Cassandra 3.11", func() {
+		options := &helm.Options{
+			KubectlOptions: defaultKubeCtlOptions,
+			SetValues: map[string]string{
+				"cassandra.version":        "3.11.12",
+				"cassandra.gc.zgc.enabled": "true",
+			},
+		}
+
+		err := renderTemplate(options)
+
+		Expect(err).ToNot(BeNil(), "Rendering should fail when using ZGC with Cassandra 3.11")
+	})
+
+	It("using both G1 and CMS with Cassandra 3.11", func() {
+		options := &helm.Options{
+			KubectlOptions: defaultKubeCtlOptions,
+			SetValues: map[string]string{
+				"cassandra.version":        "3.11.12",
+				"cassandra.gc.g1.enabled":  "true",
+				"cassandra.gc.cms.enabled": "true",
+			},
+		}
+
+		err := renderTemplate(options)
+
+		Expect(err).ToNot(BeNil(), "Rendering should fail when using both CMS and G1 with Cassandra 3.11")
+	})
+
+	It("using both G1 and ZGC with Cassandra 4.0", func() {
+		options := &helm.Options{
+			KubectlOptions: defaultKubeCtlOptions,
+			SetValues: map[string]string{
+				"cassandra.version":        "4.0.0",
+				"cassandra.gc.g1.enabled":  "true",
+				"cassandra.gc.zgc.enabled": "true",
+			},
+		}
+
+		err := renderTemplate(options)
+
+		Expect(err).ToNot(BeNil(), "Rendering should fail when using both ZGC and G1 with Cassandra 4.0")
+	})
+
+	It("using ZGC with Cassandra 4.0", func() {
+		options := &helm.Options{
+			KubectlOptions: defaultKubeCtlOptions,
+			SetValues: map[string]string{
+				"cassandra.version":        "4.0.0",
+				"cassandra.gc.zgc.enabled": "true",
+			},
+		}
+
+		err := renderTemplate(options)
+		var config Config
+		Expect(json.Unmarshal(cassdc.Spec.Config, &config)).To(Succeed())
+
+		Expect(config.JvmOptions).To(BeNil())
+		//Expect(config.JvmServerOptions).ToNot(BeNil())
+		Expect(config.Jvm11ServerOptions).ToNot(BeNil())
+		Expect(config.Jvm11ServerOptions.GarbageCollector).To(Equal("ZGC"))
+		Expect(err).To(BeNil(), "Rendering should succeed when using ZGC with Cassandra 4.0")
+	})
 })
 
 func verifyMedusaVolumeMounts(container *corev1.Container) {
